@@ -1,0 +1,1 @@
+{"rustc":943039499351779807,"target":2767357193873458326,"profile":4370414467553909544,"local":{"variant":"Precalculated","fields":["0.9.2"]},"features":"Some([\"default\", \"sqlite3-provider\", \"standard\"])","deps":[["libc v0.2.10",18274771995659057122],["sqlite3-provider v0.1.0",6841185334489489350]]}
