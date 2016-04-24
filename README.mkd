@@ -1,0 +1,18 @@
+#movies
+
+This is just a little utility I crapped out in a weekend to progress my learning
+in Rust. It keeps track of what movies you have watched and your opinions, ratings,
+and some extra information.
+
+This utility is not done yet, so if you decide to use this, back up your movies
+database if you ever update it.
+
+##usage
+
+`movies add|remove|show`
+
+From there, you will interactively enter information. Flags might come later.
+
+##copyright
+
+This program is licensed under the MIT License. See LICENSE.txt
