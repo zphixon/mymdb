@@ -1,0 +1,9 @@
+[package]
+name = "movies"
+version = "0.1.0"
+authors = ["cheezgi <zackh@firelmail.cc>"]
+
+[dependencies]
+rusqlite = "0.6.0"
+time = "0.1.35"
+rand = "0.3.14"
