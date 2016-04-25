@@ -1,13 +1,14 @@
 extern crate rusqlite;
 extern crate time;
 extern crate rand;
+extern crate regex;
 
 use time::Timespec;
 use rusqlite::Connection;
 use std::io;
 use std::path::Path;
 use std::env;
-use std::process;
+use regex::Regex;
 
 #[derive(Debug)]
 struct Movie {
@@ -65,88 +66,145 @@ fn main() {
     if length == 1 {
         println!("for help, use \"movies help\"");
     }
+    else if length == 2 {
+        for i in &args {
+            if i == "help" { print_help(); }
+            else if i == "add" { 
+                let newMovie = new_movie();
+                conn.execute("INSERT INTO movies VALUES ($1, $2, $3, $4, $5)",
+                    &[&newMovie.id, &newMovie.name, &newMovie.time_created,
+                    &newMovie.opinion, &newMovie.rating]).unwrap();
+                println!("Your movie has been added. ID# {}", &newMovie.id);
+            }
+            else if i == "remove" { 
+                println!("ID of movie to be removed: (number)");
+                let id: i32 = number_input();
 
-    for i in &args {
-        if i == "help" { print_help(); }
-        else if i == "add" { 
-            let newMovie = new_movie();
-            conn.execute("INSERT INTO movies VALUES ($1, $2, $3, $4, $5)",
-                &[&newMovie.id, &newMovie.name, &newMovie.time_created,
-                &newMovie.opinion, &newMovie.rating]).unwrap();
-            println!("Your movie has been added, it's id is {}", &newMovie.id);
-        }
-        else if i == "remove" { 
-            println!("ID of movie to be removed: (number)");
-            let id: i32 = number_input();
+                let mut stmt = conn.prepare("SELECT * FROM movies WHERE id=$1").unwrap();
+                let mut movie_iter = stmt.query_map(&[&id,], |row| {
+                    Movie {
+                        id: row.get(0),
+                        name: row.get(1),
+                        time_created: row.get(2),
+                        opinion: row.get(3),
+                        rating: row.get(4)
+                    }
+                }).unwrap();
 
-            let mut stmt = conn.prepare("SELECT * FROM movies WHERE id=$1").unwrap();
-            let mut movie_iter = stmt.query_map(&[&id,], |row| {
-                Movie {
-                    id: row.get(0),
-                    name: row.get(1),
-                    time_created: row.get(2),
-                    opinion: row.get(3),
-                    rating: row.get(4)
+                let mut q = Movie::new(0, String::new(), time::get_time(), String::new(), 0);
+                for i in movie_iter {
+                    q = i.unwrap();
                 }
-            }).unwrap();
 
-            let mut q = Movie::new(0, String::new(), time::get_time(), String::new(), 0);
-            for i in movie_iter {
-                q = i.unwrap();
+                if q.name.is_empty() {
+                    println!("Cannot find movie with ID of {}", id);
+                    return
+                }
+
+                println!("Are you sure you want to remove {}?", q.name.trim());
+
+                let resp1 = get_input();
+                let resp2 = resp1.to_lowercase();
+                let resp = resp2.trim();
+
+                if resp == String::from("yes") {
+                    conn.execute("DELETE FROM movies WHERE id=$1", &[&id,]).unwrap();
+                    println!("{} has been removed from the database.", q.name.trim());
+                } else if resp == String::from("y") {
+                    conn.execute("DELETE FROM movies WHERE id=$1", &[&id,]).unwrap();
+                    println!("{} has been removed from the database.", q.name.trim());
+                } else {
+                    println!("Movie will not be removed.");
+                }
             }
+            else if i == "show" {
+                let mut stmt = conn.prepare("SELECT * FROM movies").unwrap();
+                let mut movie_iter = stmt.query_map(&[], |row| {
+                    Movie {
+                        id: row.get(0),
+                        name: row.get(1),
+                        time_created: row.get(2),
+                        opinion: row.get(3),
+                        rating: row.get(4)
+                    }
+                }).unwrap();
 
-            if q.name.is_empty() {
-                println!("Cannot find movie with ID of {}", id);
-                return
+                let mut count = 0;
+                let mut movies: Vec<Movie> = vec![];
+                for movie in movie_iter {
+                    movies.push(movie.unwrap());
+                    count = count + 1;
+                }
+
+                println!("Found {} movie(s)", count);
+
+                for z in movies {
+                    println!("Name:    {}\nOpinion: {}\nRating:  {}\nID:      {}\nTime:    {}\n",
+                             z.name.trim(),
+                             z.opinion.trim(),
+                             z.rating,
+                             z.id,
+                             time(z.time_created));
+                }
             }
+            else {
+                let re = Regex::new(r"movies").unwrap();
+                if !re.is_match(&i) {
+                    println!("Not an option: {}", i);
+                } else {
+                    continue;
+                }
+            }
+        }
+    }
+    else {
+        println!("length {}", length);
+        let mut arg3: &String = &String::from("");
+        let mut arg4: &String = &String::from("");
+        let mut arg5: i32 = 0;
+        if length >= 3 {
+            arg3 = &args[2];
+        }
+        if length == 5 {
+            arg4 = &args[3];
+            arg5 = args[4].trim().parse().expect("3rd arg must be a number");
+        }
+        for i in &args {
+            if i == "-a" {
+                let id = rand::random::<i32>().abs() / 1000;
+                conn.execute("INSERT INTO movies VALUES ($1, $2, $3, $4, $5)",
+                    &[&id, arg3, &(time::get_time()),
+                    arg4, &arg5]).unwrap();
+                println!("Your movie has been added. ID# {}", id);
+            }
+            else if i == "-r" {
+                let id: i32 = arg3.trim().parse().expect("arg must be a number");
 
-            println!("Are you sure you want to remove {}?", q.name.trim());
+                let mut stmt = conn.prepare("SELECT * FROM movies WHERE id=$1").unwrap();
+                let mut movie_iter = stmt.query_map(&[&id,], |row| {
+                    Movie {
+                        id: row.get(0),
+                        name: row.get(1),
+                        time_created: row.get(2),
+                        opinion: row.get(3),
+                        rating: row.get(4)
+                    }
+                }).unwrap();
 
-            let resp1 = get_input();
-            let resp2 = resp1.to_lowercase();
-            let resp = resp2.trim();
+                let mut q = Movie::new(0, String::new(), time::get_time(), String::new(), 0);
+                for i in movie_iter {
+                    q = i.unwrap();
+                }
 
-            if resp == String::from("yes") {
+                if q.name.is_empty() {
+                    println!("Cannot find movie with ID of {}", id);
+                    return
+                }
+
                 conn.execute("DELETE FROM movies WHERE id=$1", &[&id,]).unwrap();
                 println!("{} has been removed from the database.", q.name.trim());
-            } else if resp == String::from("y") {
-                conn.execute("DELETE FROM movies WHERE id=$1", &[&id,]).unwrap();
-                println!("{} has been removed from the database.", q.name.trim());
-            } else {
-                println!("Movie will not be removed.");
             }
         }
-        else if i == "show" {
-            let mut stmt = conn.prepare("SELECT * FROM movies").unwrap();
-            let mut movie_iter = stmt.query_map(&[], |row| {
-                Movie {
-                    id: row.get(0),
-                    name: row.get(1),
-                    time_created: row.get(2),
-                    opinion: row.get(3),
-                    rating: row.get(4)
-                }
-            }).unwrap();
-
-            let mut count = 0;
-            let mut movies: Vec<Movie> = vec![];
-            for movie in movie_iter {
-                movies.push(movie.unwrap());
-                count = count + 1;
-            }
-
-            println!("Found {} movie(s)", count);
-
-            for z in movies {
-                println!("Name:    {}\nOpinion: {}\nRating:  {}\nID:      {}\nTime:    {}\n",
-                         z.name.trim(),
-                         z.opinion.trim(),
-                         z.rating,
-                         z.id,
-                         time(z.time_created));
-            }
-        }
-        else { continue; }
     }
 }
 
