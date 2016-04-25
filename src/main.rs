@@ -138,7 +138,7 @@ fn main() {
             println!("Found {} movie(s)", count);
 
             for z in movies {
-                println!("Name:\t{}\nOpinion:\t{}\nRating:\t{}\nID:\t{}\nTime:\t{}\n",
+                println!("Name:    {}\nOpinion: {}\nRating:  {}\nID:      {}\nTime:    {}\n",
                          z.name.trim(),
                          z.opinion.trim(),
                          z.rating,
