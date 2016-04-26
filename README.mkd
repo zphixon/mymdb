@@ -1,17 +1,19 @@
-#movies
+#mymdb
 
-This is just a little utility I crapped out in a weekend to progress my learning
-in Rust. It keeps track of what movies you have watched and your opinions, ratings,
-and some extra information.
+`mymdb` is a personal movie database manager that keeps track of what movies
+you have watched and your opinions, ratings, and some extra information.
 
-This utility is not done yet, so if you decide to use this, back up your movies
-database if you ever update it.
+This utility is not finished. The database schema is also subject to change,
+so if you ever update it, back up your movies database.
+
+The (recently changed) name is a play on words of IMDb, *the* movie database.
 
 ##usage
 
-`movies add|remove|show`
+`mymdb [add|remove|show][-a <name><opinion><rating>|-r <id>]`
 
-From there, you will interactively enter information. Flags might come later.
+* `add/remove` interactively adds or removes a movie to/from the database.
+* `-a\-r` adds or removes a movie through options.
 
 ##copyright
 
