@@ -1,5 +1,5 @@
 [package]
-name = "movies"
+name = "mymdb"
 version = "0.1.0"
 authors = ["cheezgi <zackh@firelmail.cc>"]
 
