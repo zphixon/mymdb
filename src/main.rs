@@ -148,6 +148,7 @@ fn main() {
                 }
             }
             else {
+                // TODO: make this not ridiculous
                 let re = Regex::new(r"movies").unwrap();
                 if !re.is_match(&i) {
                     println!("Not an option: {}", i);
