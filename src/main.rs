@@ -158,7 +158,6 @@ fn main() {
         }
     }
     else {
-        println!("length {}", length);
         let mut arg3: &String = &String::from("");
         let mut arg4: &String = &String::from("");
         let mut arg5: i32 = 0;
