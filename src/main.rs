@@ -52,7 +52,7 @@ impl Movie {
 }
 
 fn main() {
-    let conn = Connection::open(Path::new("movies.db")).unwrap();
+    let conn = Connection::open(Path::new(".movies.db")).unwrap();
 
     conn.execute("CREATE TABLE IF NOT EXISTS movies (
         id INTEGER UNIQUE NOT NULL,
@@ -64,7 +64,7 @@ fn main() {
     let length = args.len();
 
     if length == 1 {
-        println!("for help, use \"movies help\"");
+        println!("for help, use \"mymdb help\"");
     }
     else if length == 2 {
         for i in &args {
@@ -229,7 +229,19 @@ fn time(t: Timespec) -> String {
 }
 
 fn print_help() {
-    println!("help!");
+    println!("mymdb - personal movie database");
+    println!("usage:");
+    println!("mymdb <command> [options]");
+    println!("commands:");
+    println!("\tshow - lists movies in database");
+    println!("\tadd - adds movie to database (interactively)");
+    println!("\tremove - removes movie from database (interactively)");
+    println!("options:");
+    println!("\t-r <movie ID> - removes movie from database");
+    println!("\t-a <movie name> <opinion> <rating>");
+    println!("mymdb creates a movie database that the program is run in.");
+    println!("It looks for a sqlite file called .movies.db, and if it does");
+    println!("not exist, it is created automatically.");
 }
 
 fn number_input() -> i32 {
