@@ -149,7 +149,7 @@ fn main() {
             }
             else {
                 // TODO: make this not ridiculous
-                let re = Regex::new(r"movies").unwrap();
+                let re = Regex::new(r"mymdb").unwrap();
                 if !re.is_match(&i) {
                     println!("Not an option: {}", i);
                 } else {
