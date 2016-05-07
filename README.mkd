@@ -8,6 +8,20 @@ so if you ever update it, back up your movies database.
 
 The (recently changed) name is a play on words of IMDb, *the* movie database.
 
+##installation
+
+`mymdb` will likely need to be built from source for your platform. The only
+external dependancies not handled by cargo are cargo itself and rust.
+
+###building
+
+`cargo build --release`
+
+`mv target/release/mymdb /usr/bin/mymdb`
+
+Or, download the release binary availible for i686 GNU/Linux on the release
+page.
+
 ##usage
 
 `mymdb [add|remove|show][-a <name><opinion><rating>|-r <id>]`
