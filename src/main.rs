@@ -1,3 +1,7 @@
+/* main.rs - Main source file for mymdb
+ * (c) 2016 Zack Hixon under MIT license.
+ * See LICENSE.txt for more details. */
+
 extern crate rusqlite;
 extern crate time;
 extern crate rand;
