@@ -11,7 +11,7 @@ The (recently changed) name is a play on words of IMDb, *the* movie database.
 ##installation
 
 `mymdb` will likely need to be built from source for your platform. The only
-external dependancies not handled by cargo are cargo itself and rust.
+external dependencies not handled by cargo are cargo itself and rust.
 
 ###building
 
@@ -19,7 +19,7 @@ external dependancies not handled by cargo are cargo itself and rust.
 
 `mv target/release/mymdb /usr/bin/mymdb`
 
-Or, download the release binary availible for i686 GNU/Linux on the release
+Or, download the release binary available for i686 GNU/Linux on the release
 page.
 
 ##usage
