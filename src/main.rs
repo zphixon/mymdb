@@ -34,6 +34,7 @@ impl Movie {
         }
     }
 
+    /*
     fn get_name(self) -> String {
         self.name
     }
@@ -53,6 +54,7 @@ impl Movie {
     fn get_time(self) -> Timespec {
         self.time_created
     }
+    */
 }
 
 fn main() {
@@ -74,18 +76,18 @@ fn main() {
         for i in &args {
             if i == "help" { print_help(); }
             else if i == "add" { 
-                let newMovie = new_movie();
+                let new_movie = new_movie();
                 conn.execute("INSERT INTO movies VALUES ($1, $2, $3, $4, $5)",
-                    &[&newMovie.id, &newMovie.name, &newMovie.time_created,
-                    &newMovie.opinion, &newMovie.rating]).unwrap();
-                println!("Your movie has been added. ID# {}", &newMovie.id);
+                    &[&new_movie.id, &new_movie.name, &new_movie.time_created,
+                    &new_movie.opinion, &new_movie.rating]).unwrap();
+                println!("Your movie has been added. ID# {}", &new_movie.id);
             }
             else if i == "remove" { 
                 println!("ID of movie to be removed: (number)");
                 let id: i32 = number_input();
 
                 let mut stmt = conn.prepare("SELECT * FROM movies WHERE id=$1").unwrap();
-                let mut movie_iter = stmt.query_map(&[&id,], |row| {
+                let movie_iter = stmt.query_map(&[&id,], |row| {
                     Movie {
                         id: row.get(0),
                         name: row.get(1),
@@ -123,7 +125,7 @@ fn main() {
             }
             else if i == "show" {
                 let mut stmt = conn.prepare("SELECT * FROM movies").unwrap();
-                let mut movie_iter = stmt.query_map(&[], |row| {
+                let movie_iter = stmt.query_map(&[], |row| {
                     Movie {
                         id: row.get(0),
                         name: row.get(1),
@@ -185,7 +187,7 @@ fn main() {
                 let id: i32 = arg3.trim().parse().expect("arg must be a number");
 
                 let mut stmt = conn.prepare("SELECT * FROM movies WHERE id=$1").unwrap();
-                let mut movie_iter = stmt.query_map(&[&id,], |row| {
+                let movie_iter = stmt.query_map(&[&id,], |row| {
                     Movie {
                         id: row.get(0),
                         name: row.get(1),
