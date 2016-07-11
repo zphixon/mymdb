@@ -1,9 +1,9 @@
 [package]
 name = "mymdb"
-version = "0.1.0"
+version = "0.3.1"
 authors = ["cheezgi <zackh@firelmail.cc>"]
 
-[dependencies]
+[dependencies] #these are all *really* out of date probably
 rusqlite = "0.6.0"
 time = "0.1.35"
 rand = "0.3.14"
