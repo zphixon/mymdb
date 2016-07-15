@@ -6,7 +6,7 @@ you have watched and your opinions, ratings, and some extra information.
 This utility is not finished. The database schema is also subject to change,
 so if you ever update it, back up your movies database.
 
-The (recently changed) name is a play on words of IMDb, *the* movie database.
+The name is a play on words of IMDb, the internet movie database.
 
 ##installation
 
