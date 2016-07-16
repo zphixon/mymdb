@@ -1,4 +1,4 @@
-#mymdb [![Build status](https://travis-ci.org/cheezgi/mymdb.svg?branch=master)](https://travis-ci.org/cheezgi/mymdb)
+#mymdb [![Build status](https://travis-ci.org/cheezgi/mymdb.svg?branch=master)](https://travis-ci.org/cheezgi/mymdb) [![Build status](https://ci.appveyor.com/api/projects/status/deqyr4qyspfiqavi?svg=true)](https://ci.appveyor.com/project/cheezgi/mymdb)
 
 `mymdb` is a personal movie database manager that keeps track of what movies
 you have watched and your opinions, ratings, and some extra information.
