@@ -10,7 +10,7 @@ extern crate regex;
 use time::Timespec;
 use rusqlite::Connection;
 use std::io;
-use std::path::Path;
+use std::path::PathBuf;
 use std::env;
 use regex::Regex;
 
@@ -39,9 +39,12 @@ impl Movie {
 }
 
 fn main() {
-    // open connection to .movies.db in current directory: possibly change to
-    // ~/.movies.db for simplicity
-    let conn = Connection::open(Path::new(".movies.db")).unwrap();
+    // open ~/.movies.db, uses platform-independant home directory
+    let mut path_buf = PathBuf::new();
+    path_buf.push(env::home_dir().expect("Could not find home dir!"));
+    path_buf.push(".movies.db");
+    let path = path_buf.as_path();
+    let conn = Connection::open(path).unwrap();
 
     // create a table in movies database that maps to a movie struct
     conn.execute("CREATE TABLE IF NOT EXISTS movies (
