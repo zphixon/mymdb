@@ -6,21 +6,24 @@ you have watched and your opinions, ratings, and some extra information.
 This utility is not finished. The database schema is also subject to change,
 so if you ever update it, back up your movies database.
 
-The name is a play on words of IMDb, the internet movie database.
+The name is a play on words of [IMDb, the internet movie database.](http://www.imdb.org/)
 
 ##installation
 
-`mymdb` will likely need to be built from source for your platform. The only
-external dependencies not handled by cargo are cargo itself and rust.
+Prerequisites for building include the development files for sqlite3, avalilable
+[here](https://www.sqlite.org/download.html). Download the corresponding binaries
+for your platform. If available, use your package manager to download the
+development files instead. For Windows, move the downloaded files to a place
+on your %PATH%.
+
+`mymdb` will likely have to be built for your platform. There are x64 binaries
+on Appveyor for Windows.
 
 ###building
 
-`cargo build --release`
+`$ cargo build --release`
 
-`mv target/release/mymdb /usr/bin/mymdb`
-
-Or, download the release binary available for i686 GNU/Linux on the release
-page.
+`# cp target/release/mymdb /usr/bin/mymdb`
 
 ##usage
 
@@ -33,4 +36,11 @@ page.
 
 This program is licensed under the MIT License. See LICENSE.txt
 
+##trademarks
+
+IMDb is a registered trademark of IMDb in the United States and/or other countries.
+In no way does `mymdb` attempt to infringe on these trademarks or copyrights,
+nor is `mymdb` or the author(s) of `mymdb` affiliated with IMDb.
+
+<!-- gotta cover my ass -->
 
