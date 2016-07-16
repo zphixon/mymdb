@@ -15,5 +15,12 @@ install:
 build_script:
     - cargo build --release
 
+artifacts:
+    - path: target\release
+      name: release
+
+    - path: target\debug
+      name: debug
+
 cache:
     - C:\Users\appveyor\.cargo
