@@ -103,7 +103,11 @@ fn main() {
 
                 println!("Are you sure you want to remove {}?", q.name.trim());
 
-                let resp = get_input().to_lowercase().trim();
+                // get_input() does not last long enough and I don't know how
+                // to extend lifetimes so yeah
+                let resp_upper = get_input();
+                let resp_trim = resp_upper.to_lowercase();
+                let resp = resp_trim.trim();
 
                 // remove from database
                 if resp == String::from("yes") {
