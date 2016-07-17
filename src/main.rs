@@ -1,12 +1,12 @@
 /* main.rs - Main source file for mymdb
  * (c) 2016 Zack Hixon under MIT license.
  * See LICENSE.txt for more details. */
-
+//extern crate argparse;
 extern crate rusqlite;
 extern crate time;
-extern crate rand;
 extern crate regex;
 
+//use argparse::{ArgumentParser, StoreTrue, Store};
 use time::Timespec;
 use rusqlite::Connection;
 use std::io;
@@ -44,15 +44,15 @@ fn main() {
     path_buf.push(env::home_dir().expect("Could not find home dir!"));
     path_buf.push(".movies.db");
     let path = path_buf.as_path();
-    let conn = Connection::open(path).unwrap();
+    let conn = Connection::open(path).expect("connection fucked");
 
     // create a table in movies database that maps to a movie struct
     conn.execute("CREATE TABLE IF NOT EXISTS movies (
-        id INTEGER UNIQUE NOT NULL,
+        id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         time_created TEXT NOT NULL,
         opinion TEXT NOT NULL,
-        rating INTEGER)", &[]).unwrap();
+        rating INTEGER)", &[]).expect("create table fucked");
 
     // get args
     let args: Vec<String> = env::args().collect();
@@ -69,11 +69,11 @@ fn main() {
                 let new_movie = new_movie();
 
                 // insert new movie into database
-                conn.execute("INSERT INTO movies VALUES ($1, $2, $3, $4, $5)",
-                    &[&new_movie.id, &new_movie.name, &new_movie.time_created,
+                conn.execute("INSERT INTO movies (name, time_created, opinion, rating) VALUES ($1, $2, $3, $4)",
+                    &[&new_movie.name, &new_movie.time_created,
                     &new_movie.opinion, &new_movie.rating]).unwrap();
 
-                println!("Your movie has been added. ID# {}", &new_movie.id);
+                println!("\"{}\" has been added.", new_movie.name.trim());
             }
             else if i == "remove" {
                 // get movie id
@@ -126,7 +126,7 @@ fn main() {
             // show movies in database
             else if i == "show" {
                 // select all movies, conver to iterator
-                let mut stmt = conn.prepare("SELECT * FROM movies").unwrap();
+                let mut stmt = conn.prepare("SELECT * FROM movies").expect("prepare fucked");
                 let movie_iter = stmt.query_map(&[], |row| {
                     Movie {
                         id: row.get(0),
@@ -135,13 +135,13 @@ fn main() {
                         opinion: row.get(3),
                         rating: row.get(4)
                     }
-                }).unwrap();
+                }).expect("hey it fucked up");
 
                 // convert list of movies to vector
                 let mut count = 0;
                 let mut movies: Vec<Movie> = vec![];
                 for movie in movie_iter {
-                    movies.push(movie.unwrap());
+                    movies.push(movie.expect("push fucked"));
                     count = count + 1;
                 }
 
@@ -183,11 +183,10 @@ fn main() {
         for i in &args {
             if i == "-a" {
                 // add movie
-                let id = rand::random::<i32>().abs() / 1000;
-                conn.execute("INSERT INTO movies VALUES ($1, $2, $3, $4, $5)",
-                    &[&id, arg3, &(time::get_time()),
+                conn.execute("INSERT INTO movies (name, time_created, opinion, rating) VALUES ($1, $2, $3, $4)",
+                    &[arg3, &time::get_time(),
                     arg4, &arg5]).unwrap();
-                println!("Your movie has been added. ID# {}", id);
+                println!("\"{}\" has been added.", arg3);
             }
             else if i == "-r" {
                 // remove movie
@@ -224,16 +223,16 @@ fn main() {
 // create new movie struct using input
 fn new_movie() -> Movie {
     println!("Name of movie:");
-    let name: String = get_input();
+    let name: String = get_input().trim().to_string();
 
     println!("Thoughts:");
-    let opinion: String = get_input();
+    let opinion: String = get_input().trim().to_string();
 
     println!("Rating: (number)");
     let rating: i32 = number_input();
 
     // TODO: non-retarded ID numbers, like autoincrement
-    Movie::new(rand::random::<i32>().abs() / 1000, name,
+    Movie::new(0, name,
         time::get_time(), opinion, rating)
 }
 

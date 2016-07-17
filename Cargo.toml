@@ -1,10 +1,10 @@
 [package]
 name = "mymdb"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["cheezgi <zackh@firelmail.cc>"]
 
 [dependencies]
 rusqlite = "*"
 time = "*"
-rand = "*"
 regex = "*"
+argparse = "*"
