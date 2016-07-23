@@ -46,7 +46,7 @@ fn main() {
     path_buf.push(env::home_dir().expect("Could not find home dir!"));
     path_buf.push(".movies.db");
     let path = path_buf.as_path();
-    let conn = Connection::open(path).expect("connection fucked");
+    let conn = Connection::open(path).expect("Could not open database!");
 
     // create a table in movies database that maps to a movie struct
     conn.execute("CREATE TABLE IF NOT EXISTS movies (
@@ -54,7 +54,7 @@ fn main() {
         name TEXT NOT NULL,
         time_created TEXT NOT NULL,
         opinion TEXT NOT NULL,
-        rating INTEGER)", &[]).expect("create table fucked");
+        rating INTEGER)", &[]).expect("Could not create table!");
 
     // get args
     let args: Vec<String> = env::args().collect();
@@ -131,7 +131,7 @@ fn main() {
             // show movies in database
             else if i == "show" {
                 // select all movies, conver to iterator
-                let mut stmt = conn.prepare("SELECT * FROM movies").expect("prepare fucked");
+                let mut stmt = conn.prepare("SELECT * FROM movies").expect("Could not prepare statement!");
                 let movie_iter = stmt.query_map(&[], |row| {
                     Movie {
                         id: row.get(0),
@@ -140,13 +140,13 @@ fn main() {
                         opinion: row.get(3),
                         rating: row.get(4)
                     }
-                }).expect("hey it fucked up");
+                }).expect("Could not iterate movies!");
 
                 // convert list of movies to vector
                 let mut count = 0;
                 let mut movies: Vec<Movie> = vec![];
                 for movie in movie_iter {
-                    movies.push(movie.expect("push fucked"));
+                    movies.push(movie.expect("Could not unwrap movie!"));
                     count = count + 1;
                 }
 
