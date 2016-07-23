@@ -14,6 +14,8 @@ use std::path::PathBuf;
 use std::env;
 use regex::Regex;
 
+static VERSION: &'static str = "0.4.3";
+
 // movie struct
 #[derive(Debug)]
 struct Movie {
@@ -64,6 +66,9 @@ fn main() {
     else if length == 2 {
         for i in &args {
             if i == "help" { print_help(); }
+            else if i == "version" || i == "-v" {
+                println!("mymdb version {}", VERSION);
+            }
             else if i == "add" {
                 // prompt user for new movie
                 let new_movie = new_movie();
