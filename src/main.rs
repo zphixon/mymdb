@@ -1,288 +1,288 @@
 /* main.rs - Main source file for mymdb
  * (c) 2016 Zack Hixon under MIT license.
  * See LICENSE.txt for more details. */
-//extern crate argparse;
-extern crate rusqlite;
-extern crate time;
-extern crate regex;
 
-//use argparse::{ArgumentParser, StoreTrue, Store};
+extern crate argparse;
+extern crate time;
+extern crate rusqlite;
+
+use argparse::{ArgumentParser, Store, Print};
+
+use std::io::prelude::*;
+use std::io;
+use std::env;
+use std::str::FromStr;
+use std::path::PathBuf;
+use std::error::Error;
 use time::Timespec;
 use rusqlite::Connection;
-use std::io;
-use std::path::PathBuf;
-use std::env;
-use regex::Regex;
 
-static VERSION: &'static str = "0.4.3";
+static VERSION: &'static str = "0.5.1";
 
-// movie struct
-#[derive(Debug)]
 struct Movie {
     id: i32,
     name: String,
     time_created: Timespec,
     opinion: String,
-    rating: i32
+    rating: i32,
+    version: String
 }
 
-// movie impl: possibly add search functions
-impl Movie {
-    // create new movie
-    fn new(id: i32, name: String, time_created: Timespec, opinion: String, rating: i32) -> Movie {
-        Movie {
-            id: id,
-            name: name,
-            time_created: time_created,
-            opinion: opinion,
-            rating: rating,
-        }
+enum Command {
+    Show,
+    Add,
+    Remove,
+    Edit,
+    None
+}
+
+impl FromStr for Command {
+    type Err = ();
+    fn from_str(src: &str) -> Result<Command, ()> {
+        return match src {
+            "show" => Ok(Command::Show),
+            "add" => Ok(Command::Add),
+            "remove" => Ok(Command::Remove),
+            "edit" => Ok(Command::Edit),
+            _ => Err(()),
+        };
     }
 }
 
 fn main() {
-    // open ~/.movies.db, uses platform-independant home directory
+    // open movies database in .movies.db
     let mut path_buf = PathBuf::new();
     path_buf.push(env::home_dir().expect("Could not find home dir!"));
     path_buf.push(".movies.db");
     let path = path_buf.as_path();
-    let conn = Connection::open(path).expect("Could not open database!");
+    let conn = Connection::open(path).expect("Counld not open database!");
 
     // create a table in movies database that maps to a movie struct
     conn.execute("CREATE TABLE IF NOT EXISTS movies (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         time_created TEXT NOT NULL,
         opinion TEXT NOT NULL,
-        rating INTEGER)", &[]).expect("Could not create table!");
+        rating INTEGER NOT NULL,
+        version TEXT NOT NULL)", &[]).expect("Could not create table!");
 
-    // get args
-    let args: Vec<String> = env::args().collect();
-    let length = args.len();
+    let mut command = Command::None;
 
-    if length == 1 {
-        println!("for help, use \"mymdb help\"");
+    {
+        let mut args = ArgumentParser::new();
+        args.set_description("Rate your movies");
+        args.refer(&mut command)
+            .add_argument("command", Store,
+                          "Command to run (show, add, remove)").required();
+        args.add_option(&["-V", "--version"],
+                        Print("mymdb version ".to_string() + VERSION),
+                        "Show version of mymdb");
+        args.parse_args_or_exit();
     }
-    else if length == 2 {
-        for i in &args {
-            if i == "help" { print_help(); }
-            else if i == "version" || i == "-v" {
-                println!("mymdb version {}", VERSION);
+
+    match command {
+        Command::Show => {
+            // select all movies, convert to iterator
+            let mut stmt = conn.prepare("SELECT * FROM movies").expect("Could not prepare statement!");
+            let movie_iter = stmt.query_map(&[], |row| {
+                Movie {
+                    id: row.get(0),
+                    name: row.get(1),
+                    time_created: row.get(2),
+                    opinion: row.get(3),
+                    rating: row.get(4),
+                    version: row.get(5)
+                }
+            }).expect("Could not iterate movies!");
+
+            // convert list of movies to vector
+            let mut count = 0;
+            let mut movies: Vec<Movie> = vec![];
+            for movie in movie_iter {
+                movies.push(movie.expect("Could not unwrap movie!"));
+                count = count + 1;
             }
-            else if i == "add" {
-                // prompt user for new movie
-                let new_movie = new_movie();
 
-                // insert new movie into database
-                conn.execute("INSERT INTO movies (name, time_created, opinion, rating) VALUES ($1, $2, $3, $4)",
-                    &[&new_movie.name, &new_movie.time_created,
-                    &new_movie.opinion, &new_movie.rating]).unwrap();
+            println!("Found {} movie(s)", count);
 
-                println!("\"{}\" has been added.", new_movie.name.trim());
+            // print movies
+            for z in movies {
+                println!("Name:    {}\nOpinion: {}\nRating:  {}\nID:      {}\nTime:    {}\n",
+                         z.name,
+                         z.opinion,
+                         z.rating,
+                         z.id,
+                         time(z.time_created));
             }
-            else if i == "remove" {
-                // get movie id
-                println!("ID of movie to be removed: (number)");
-                let id: i32 = number_input();
+        },
+        Command::Add => {
+            let new_movie = new_movie();
 
-                // find movie by id: TODO: make more efficient
-                let mut stmt = conn.prepare("SELECT * FROM movies WHERE id=$1").unwrap();
-                let movie_iter = stmt.query_map(&[&id,], |row| {
-                    Movie {
-                        id: row.get(0),
-                        name: row.get(1),
-                        time_created: row.get(2),
-                        opinion: row.get(3),
-                        rating: row.get(4)
+            match conn.execute("INSERT INTO movies (name, time_created, opinion, rating, version) VALUES ($1, $2, $3, $4, $5)",
+                &[&new_movie.name, &new_movie.time_created,
+                  &new_movie.opinion, &new_movie.rating, &new_movie.version]) {
+                Ok(_) => (),
+                Err(e) => {
+                    let mut badv = false;
+                    let mut stmt = conn.prepare("SELECT version FROM movies")
+                        .unwrap();
+                    let mut rows = stmt.query(&[]).unwrap();
+
+                    while let Some(row) = rows.next() {
+                        let rs: String = row.unwrap().get(0);
+                        if rs != VERSION {
+                            badv = true;
+                        }
                     }
-                }).unwrap();
 
-                // get last movie with id because shitty API or I don't know how to use it
-                // probably the latter honestly
-                let mut q = Movie::new(0, String::new(), time::get_time(), String::new(), 0);
-                for i in movie_iter {
-                    q = i.unwrap();
-                }
-
-                if q.name.is_empty() {
-                    println!("Cannot find movie with ID of {}", id);
-                    return
-                }
-
-                println!("Are you sure you want to remove {}?", q.name.trim());
-
-                // get_input() does not last long enough and I don't know how
-                // to extend lifetimes so yeah
-                let resp_upper = get_input();
-                let resp_trim = resp_upper.to_lowercase();
-                let resp = resp_trim.trim();
-
-                // remove from database
-                if resp == String::from("yes") {
-                    conn.execute("DELETE FROM movies WHERE id=$1", &[&id,]).unwrap();
-                    println!("{} has been removed from the database.", q.name.trim());
-                } else if resp == String::from("y") {
-                    conn.execute("DELETE FROM movies WHERE id=$1", &[&id,]).unwrap();
-                    println!("{} has been removed from the database.", q.name.trim());
-                } else {
-                    println!("Movie will not be removed.");
-                }
-            }
-            // show movies in database
-            else if i == "show" {
-                // select all movies, conver to iterator
-                let mut stmt = conn.prepare("SELECT * FROM movies").expect("Could not prepare statement!");
-                let movie_iter = stmt.query_map(&[], |row| {
-                    Movie {
-                        id: row.get(0),
-                        name: row.get(1),
-                        time_created: row.get(2),
-                        opinion: row.get(3),
-                        rating: row.get(4)
+                    if badv {
+                        println!("Your movies database contains movies from a different version of mymdb.\nYou may need to recreate your database.");
                     }
-                }).expect("Could not iterate movies!");
 
-                // convert list of movies to vector
-                let mut count = 0;
-                let mut movies: Vec<Movie> = vec![];
-                for movie in movie_iter {
-                    movies.push(movie.expect("Could not unwrap movie!"));
-                    count = count + 1;
-                }
-
-                println!("Found {} movie(s)", count);
-
-                // print movies
-                for z in movies {
-                    println!("Name:    {}\nOpinion: {}\nRating:  {}\nID:      {}\nTime:    {}\n",
-                             z.name.trim(),
-                             z.opinion.trim(),
-                             z.rating,
-                             z.id,
-                             time(z.time_created));
-                }
+                    panic!("{}", Error::description(&e));
+                },
             }
-            else {
-                // TODO: make this not ridiculous
-                let re = Regex::new(r"mymdb").unwrap();
-                if !re.is_match(&i) {
-                    println!("Not an option: {}", i);
-                } else {
-                    continue;
-                }
-            }
-        }
-    }
-    else {
-        // TODO: get argparse or something like that
-        let mut arg3: &String = &String::from("");
-        let mut arg4: &String = &String::from("");
-        let mut arg5: i32 = 0;
-        if length >= 3 {
-            arg3 = &args[2];
-        }
-        if length == 5 {
-            arg4 = &args[3];
-            arg5 = args[4].trim().parse().expect("3rd arg must be a number");
-        }
-        for i in &args {
-            if i == "-a" {
-                // add movie
-                conn.execute("INSERT INTO movies (name, time_created, opinion, rating) VALUES ($1, $2, $3, $4)",
-                    &[arg3, &time::get_time(),
-                    arg4, &arg5]).unwrap();
-                println!("\"{}\" has been added.", arg3);
-            }
-            else if i == "-r" {
-                // remove movie
-                let id: i32 = arg3.trim().parse().expect("arg must be a number");
 
-                let mut stmt = conn.prepare("SELECT * FROM movies WHERE id=$1").unwrap();
-                let movie_iter = stmt.query_map(&[&id,], |row| {
-                    Movie {
-                        id: row.get(0),
-                        name: row.get(1),
-                        time_created: row.get(2),
-                        opinion: row.get(3),
-                        rating: row.get(4)
+            println!("\"{}\" has been added.", new_movie.name);
+        },
+        Command::Remove => {
+            print!("ID of movie to be removed: ");
+
+            let id = get_input_i32();
+
+            let remove = conn.query_row("SELECT * FROM movies WHERE id=$1", &[&id], |row| {
+                Movie {
+                    id: row.get(0),
+                    name: row.get(1),
+                    time_created: row.get(2),
+                    opinion: row.get(3),
+                    rating: row.get(4),
+                    version: row.get(5)
+                }
+            });
+
+            match remove {
+                Ok(m) => {
+                    print!("Are you sure you want to remove \"{}\"? (yes/no)", m.name);
+                    let res: String = get_input().to_lowercase();
+
+                    if res != "yes".to_string() {
+                        println!("Will not remove.");
+                    } else {
+                        conn.execute("DELETE FROM movies WHERE id=$", &[&id,]).unwrap();
+                        println!("\"{}\" has been removed from the database.", m.name);
                     }
-                }).unwrap();
-
-                let mut q = Movie::new(0, String::new(), time::get_time(), String::new(), 0);
-                for i in movie_iter {
-                    q = i.unwrap();
-                }
-
-                if q.name.is_empty() {
-                    println!("Cannot find movie with ID of {}", id);
-                    return
-                }
-
-                conn.execute("DELETE FROM movies WHERE id=$1", &[&id,]).unwrap();
-                println!("{} has been removed from the database.", q.name.trim());
+                },
+                Err(_) => println!("Movie does not exist.")
             }
-        }
+        },
+        Command::Edit => {
+            print!("ID of movie to be edited: ");
+
+            let old_id = get_input_i32();
+
+            let edit = conn.query_row("SELECT * FROM movies WHERE id=$1", &[&old_id,], |row| {
+                Movie {
+                    id: row.get(0),
+                    name: row.get(1),
+                    time_created: row.get(2),
+                    opinion: row.get(3),
+                    rating: row.get(4),
+                    version: row.get(5)
+                }
+            });
+
+            match edit {
+                Ok(_) => {
+                    let new_movie = new_movie();
+
+                    match conn.execute("UPDATE movies SET name=$1, time_created=$2, opinion=$3, rating=$4, version=$5 WHERE id=$6",
+                        &[&new_movie.name, &new_movie.time_created,
+                          &new_movie.opinion, &new_movie.rating,
+                          &new_movie.version, &old_id]) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            let mut badv = false;
+                            let mut stmt = conn.prepare("SELECT version FROM movies")
+                                .unwrap();
+                            let mut rows = stmt.query(&[]).unwrap();
+
+                            while let Some(row) = rows.next() {
+                                let rs: String = row.unwrap().get(0);
+                                if rs != VERSION {
+                                    badv = true;
+                                }
+                            }
+
+                            if badv {
+                                println!("Your movies database contains movies from a different version of mymdb.\nYou may need to recreate your database.");
+                            }
+
+                            panic!("{}", Error::description(&e));
+                        },
+                    }
+
+                    println!("\"{}\" has been edited.", new_movie.name);
+                },
+                Err(_) => println!("Movie does not exist.")
+            }
+        },
+        Command::None => panic!("Incorrect command - argparse or other??")
     }
 }
 
-// create new movie struct using input
 fn new_movie() -> Movie {
-    println!("Name of movie:");
-    let name: String = get_input().trim().to_string();
+    print!("Name of movie: ");
+    let name: String = get_input().to_string();
 
-    println!("Thoughts:");
-    let opinion: String = get_input().trim().to_string();
+    print!("      Opinion: ");
+    let opinion: String = get_input().to_string();
 
-    println!("Rating: (number)");
-    let rating: i32 = number_input();
+    print!(" Rating (num): ");
+    let rating: i32 = get_input_i32();
 
-    // TODO: non-retarded ID numbers, like autoincrement
-    Movie::new(0, name,
-        time::get_time(), opinion, rating)
-}
-
-// return time as string
-fn time(t: Timespec) -> String {
-    let real_time = time::at(t);
-    String::from(format!("{}-{}-{} {}:{}", (real_time.tm_year + 1900), real_time.tm_mon,
-                 real_time.tm_mday, real_time.tm_hour, real_time.tm_min))
-}
-
-fn print_help() {
-    println!("mymdb - personal movie database");
-    println!("usage:");
-    println!("mymdb <command> [options]");
-    println!("commands:");
-    println!("\tshow - lists movies in database");
-    println!("\tadd - adds movie to database (interactively)");
-    println!("\tremove - removes movie from database (interactively)");
-    println!("options:");
-    println!("\t-r <movie ID> - removes movie from database");
-    println!("\t-a <movie name> <opinion> <rating>");
-    println!("mymdb creates a movie database that the program is run in.");
-    println!("It looks for a sqlite file called .movies.db, and if it does");
-    println!("not exist, it is created automatically.");
-}
-
-// get input as number
-fn number_input() -> i32 {
-    let n = match get_input().trim().parse::<i32>() {
-        Ok(n) => n,
-        Err(e) => { println!("Not a number"); 0 },
-    };
-
-    n
+    Movie {
+        id: 0,
+        name: name,
+        time_created: time::get_time(),
+        opinion: opinion,
+        rating: rating,
+        version: VERSION.into()
+    }
 }
 
 // get input as string
 fn get_input() -> String {
+    io::stdout().flush().expect("could not flush stdout");
+
     let mut i = String::new();
     let handle = io::stdin();
 
     match handle.read_line(&mut i) {
-        Ok(n) => {},
-        Err(e) => println!("What's your problem?")
+        Ok(_) => {},
+        Err(_) => {
+            println!("Could not read input.");
+            std::process::exit(3);
+        }
     }
 
-    i
+    return i.trim().to_string();
 }
+
+fn get_input_i32() -> i32 {
+    match get_input().parse::<i32>() {
+        Ok(n) => n,
+        Err(_) => {
+            println!("Not a number");
+            std::process::exit(2);
+        }
+    }
+}
+
+fn time(t: Timespec) -> String {
+    let real_time = time::at(t);
+    // might break in 2032 or whenever unix time runs out
+    String::from(format!("{}-{}-{} {}:{}", (real_time.tm_year + 1900), real_time.tm_mon,
+        real_time.tm_mday, real_time.tm_hour, real_time.tm_min))
+}
+
