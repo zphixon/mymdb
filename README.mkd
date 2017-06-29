@@ -36,7 +36,7 @@ on Appveyor for Windows.
 
 This program is licensed under the MIT License. See LICENSE.txt
 
-##trademarks
+## trademarks
 
 IMDb is a registered trademark of IMDb in the United States and/or other countries.
 In no way does `mymdb` attempt to infringe on these trademarks or copyrights,
