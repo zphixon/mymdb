@@ -1,4 +1,4 @@
-#mymdb [![Build status](https://travis-ci.org/cheezgi/mymdb.svg?branch=master)](https://travis-ci.org/cheezgi/mymdb) [![Build status](https://ci.appveyor.com/api/projects/status/deqyr4qyspfiqavi?svg=true)](https://ci.appveyor.com/project/cheezgi/mymdb)
+# mymdb [![Build status](https://travis-ci.org/cheezgi/mymdb.svg?branch=master)](https://travis-ci.org/cheezgi/mymdb) [![Build status](https://ci.appveyor.com/api/projects/status/deqyr4qyspfiqavi?svg=true)](https://ci.appveyor.com/project/cheezgi/mymdb)
 
 `mymdb` is a personal movie database manager that keeps track of what movies
 you have watched and your opinions, ratings, and some extra information.
@@ -8,7 +8,7 @@ so if you ever update it, back up your movies database.
 
 The name is a play on words of [IMDb, the internet movie database.](http://www.imdb.org/)
 
-##installation
+## installation
 
 Prerequisites for building include the development files for sqlite3, avalilable
 [here](https://www.sqlite.org/download.html). Download the corresponding binaries
@@ -19,20 +19,20 @@ on your %PATH%.
 `mymdb` will likely have to be built for your platform. There are x64 binaries
 on Appveyor for Windows.
 
-###building
+### building
 
 `$ cargo build --release`
 
 `# cp target/release/mymdb /usr/bin/mymdb`
 
-##usage
+## usage
 
 `mymdb [add|remove|show][-a <name><opinion><rating>|-r <id>]`
 
 * `add/remove` interactively adds or removes a movie to/from the database.
 * `-a\-r` adds or removes a movie through options.
 
-##copyright
+## copyright
 
 This program is licensed under the MIT License. See LICENSE.txt
 
